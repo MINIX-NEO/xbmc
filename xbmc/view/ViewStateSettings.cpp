@@ -128,7 +128,7 @@ bool CViewStateSettings::Load(const TiXmlNode *settings)
     if (XMLUtils::GetInt(pElement, XML_SETTINGLEVEL, settingLevel, (const int)SettingLevelBasic, (const int)SettingLevelExpert))
       m_settingLevel = (SettingLevel)settingLevel;
     else
-      m_settingLevel = SettingLevelStandard;
+      m_settingLevel = SettingLevelExpert;
 
     const TiXmlNode* pEventLogNode = pElement->FirstChild(XML_EVENTLOG);
     if (pEventLogNode != NULL)
