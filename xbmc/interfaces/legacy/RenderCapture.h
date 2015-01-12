@@ -69,12 +69,22 @@ namespace XBMCAddon
       inline float getAspectRatio() { return g_renderManager.GetAspectRatio(); }
 
       /**
-       * getImageFormat() -- returns format of captured image: 'BGRA' or 'RGBA'.
+       * getImageFormat() -- returns format of captured image: 'BGRA' or 'RGBA' or 'RGB'.
        */
       inline const char* getImageFormat()
       {
-        return m_capture->GetCaptureFormat() == CAPTUREFORMAT_BGRA ? "BGRA" :
-          (m_capture->GetCaptureFormat() == CAPTUREFORMAT_RGBA ? "RGBA" : NULL);
+        switch(m_capture->GetCaptureFormat())
+        {
+          case CAPTUREFORMAT_BGRA:
+            return "BGRA";
+          case CAPTUREFORMAT_RGBA:
+            return "RGBA";
+          case CAPTUREFORMAT_RGB:
+            return "RGB";
+          case CAPTUREFORMAT_BGR:
+            return "BGR";
+        }
+        return NULL;
       }
 
       // RenderCapture_GetImage
