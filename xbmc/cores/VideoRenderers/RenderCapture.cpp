@@ -129,6 +129,53 @@ void CRenderCaptureDispmanX::ReadOut()
 {
 }
 
+#elif defined(HAS_LIBAMCODEC)
+
+CRenderCaptureAml::CRenderCaptureAml()
+{
+  m_pVideoCap = new CAmVideoCap();
+}
+
+CRenderCaptureAml::~CRenderCaptureAml()
+{
+  delete[] m_pixels;
+  delete m_pVideoCap;
+}
+
+int CRenderCaptureAml::GetCaptureFormat()
+{
+  return CAPTUREFORMAT_BGR;
+}
+
+void CRenderCaptureAml::BeginRender()
+{
+  if (m_bufferSize != m_width * m_height * 3)
+  {
+    m_bufferSize = m_width * m_height * 3;
+    delete[] m_pixels;
+    m_pixels = new uint8_t[m_bufferSize];
+  }
+
+  if (m_pVideoCap->CaptureVideoFrame(m_width, m_height, m_pixels))
+    SetState(CAPTURESTATE_DONE);
+  else
+    SetState(CAPTURESTATE_FAILED);
+}
+
+void CRenderCaptureAml::EndRender()
+{
+  m_pVideoCap->CancelCapture();
+}
+
+void* CRenderCaptureAml::GetRenderBuffer()
+{
+    return m_pixels;
+}
+
+void CRenderCaptureAml::ReadOut()
+{
+}
+
 #elif defined(HAS_GL) || defined(HAS_GLES)
 
 CRenderCaptureGL::CRenderCaptureGL()

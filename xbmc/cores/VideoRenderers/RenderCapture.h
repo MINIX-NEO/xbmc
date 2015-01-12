@@ -97,6 +97,8 @@ enum ECAPTURESTATE
 
 #define CAPTUREFORMAT_BGRA 0x01
 #define CAPTUREFORMAT_RGBA 0x02
+#define CAPTUREFORMAT_RGB  0x03
+#define CAPTUREFORMAT_BGR  0x04
 
 class CRenderCaptureBase
 {
@@ -219,6 +221,34 @@ class CRenderCaptureDispmanX : public CRenderCaptureBase
 //used instead of typedef CRenderCaptureGL CRenderCapture
 //since C++ doesn't allow you to forward declare a typedef
 class CRenderCapture : public CRenderCaptureDispmanX
+{
+  public:
+    CRenderCapture() {};
+};
+
+#elif defined(HAS_LIBAMCODEC)
+#include "xbmc/linux/AmVideoCap.h"
+
+class CRenderCaptureAml : public CRenderCaptureBase
+{
+  public:
+    CRenderCaptureAml();
+    ~CRenderCaptureAml();
+
+    int   GetCaptureFormat();
+
+    void  BeginRender();
+    void  EndRender();
+    void  ReadOut();
+
+    void* GetRenderBuffer();
+  private:
+    CAmVideoCap *m_pVideoCap;
+};
+
+//used instead of typedef CRenderCaptureGL CRenderCapture
+//since C++ doesn't allow you to forward declare a typedef
+class CRenderCapture : public CRenderCaptureAml
 {
   public:
     CRenderCapture() {};
