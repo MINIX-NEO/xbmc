@@ -9701,3 +9701,5 @@ xbmc/cores/dvdplayer/DVDCodecs/DVDCodecInterface.h
 xbmc/cores/dvdplayer/DVDCodecs/DVDCodecInterface.cpp
 xbmc/cores/AudioEngine/Sinks/AESinkPULSE.h
 xbmc/cores/AudioEngine/Sinks/AESinkPULSE.cpp
+xbmc/dialogs/GUIDialogSimpleMenu.cpp
+xbmc/dialogs/GUIDialogSimpleMenu.h
