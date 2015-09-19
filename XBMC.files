@@ -9703,3 +9703,7 @@ xbmc/cores/AudioEngine/Sinks/AESinkPULSE.h
 xbmc/cores/AudioEngine/Sinks/AESinkPULSE.cpp
 xbmc/dialogs/GUIDialogSimpleMenu.cpp
 xbmc/dialogs/GUIDialogSimpleMenu.h
+xbmc/filesystem/posix/PosixFile.h
+xbmc/filesystem/posix/PosixDirectory.h
+xbmc/filesystem/posix/PosixFile.cpp
+xbmc/filesystem/posix/PosixDirectory.cpp
