@@ -339,7 +339,7 @@ map<string, string> fillMimeTypes()
   mimeTypes.insert(pair<string, string>("rexx",      "text/x-script.rexx"));
   mimeTypes.insert(pair<string, string>("rf",        "image/vnd.rn-realflash"));
   mimeTypes.insert(pair<string, string>("rgb",       "image/x-rgb"));
-  mimeTypes.insert(pair<string, string>("rm",        "audio/x-pn-realaudio"));
+  mimeTypes.insert(pair<string, string>("rm",        "application/octet-stream"));
   mimeTypes.insert(pair<string, string>("rmi",       "audio/mid"));
   mimeTypes.insert(pair<string, string>("rmm",       "audio/x-pn-realaudio"));
   mimeTypes.insert(pair<string, string>("rmp",       "audio/x-pn-realaudio"));
