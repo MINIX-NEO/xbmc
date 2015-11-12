@@ -179,15 +179,15 @@ bool CAEFactory::SupportsRaw(AEDataFormat format, int samplerate)
     return false;
 
   // check if the format is enabled in settings
-  if (format == AE_FMT_AC3 && !CSettings::Get().GetBool("audiooutput.ac3passthrough"))
+  if ((format == AE_FMT_AC3 || format == AE_FMT_AC3_RAW) && !CSettings::Get().GetBool("audiooutput.ac3passthrough"))
     return false;
-  if (format == AE_FMT_DTS && !CSettings::Get().GetBool("audiooutput.dtspassthrough"))
+  if ((format == AE_FMT_DTS || format == AE_FMT_DTS_RAW) && !CSettings::Get().GetBool("audiooutput.dtspassthrough"))
     return false;
-  if (format == AE_FMT_EAC3 && !CSettings::Get().GetBool("audiooutput.eac3passthrough"))
+  if ((format == AE_FMT_EAC3 || format == AE_FMT_EAC3_RAW) && !CSettings::Get().GetBool("audiooutput.eac3passthrough"))
     return false;
-  if (format == AE_FMT_TRUEHD && !CSettings::Get().GetBool("audiooutput.truehdpassthrough"))
+  if ((format == AE_FMT_TRUEHD || format == AE_FMT_TRUEHD_RAW) && !CSettings::Get().GetBool("audiooutput.truehdpassthrough"))
     return false;
-  if (format == AE_FMT_DTSHD && !CSettings::Get().GetBool("audiooutput.dtshdpassthrough"))
+  if ((format == AE_FMT_DTSHD || format == AE_FMT_DTSHD_RAW) && !CSettings::Get().GetBool("audiooutput.dtshdpassthrough"))
     return false;
 
   if(AE)
