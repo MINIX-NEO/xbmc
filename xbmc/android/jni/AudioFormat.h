@@ -54,6 +54,11 @@ class CJNIAudioFormat
 
     // OUYA-specific
     static int ENCODING_IEC61937_16BIT;
+
+    // AML
+    static int ENCODING_DTSHD;
+    static int ENCODING_DTSHD_MA;
+    static int ENCODING_TRUEHD;
 };
 
 };
