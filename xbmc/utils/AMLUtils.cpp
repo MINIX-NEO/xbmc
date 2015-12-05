@@ -349,10 +349,7 @@ void aml_cpufreq_max(bool limit)
 
 void aml_set_audio_passthrough(bool passthrough)
 {
-  if (  aml_present() )
-  {
-    SysfsUtils::SetInt("/sys/class/audiodsp/digital_raw", passthrough ? 2:0);
-  }
+  SysfsUtils::SetInt("/sys/class/audiodsp/digital_raw", passthrough ? 2 : 0);
 }
 
 void aml_probe_hdmi_audio()
