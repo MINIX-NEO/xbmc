@@ -71,4 +71,8 @@ private:
   bool               m_passthrough;
   double             m_audiotrackbuffer_sec;
   int                m_encoding;
+
+#if defined(HAS_LIBAMCODEC)
+  int                m_old_digital_raw;
+#endif
 };

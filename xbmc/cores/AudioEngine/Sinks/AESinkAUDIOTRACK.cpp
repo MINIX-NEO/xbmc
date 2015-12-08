@@ -192,6 +192,10 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 {
   m_format      = format;
   m_volume      = -1;
+#if defined(HAS_LIBAMCODEC)
+  if (aml_present())
+    m_old_digital_raw = -1;
+#endif
 
   CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::Initialize requested: sampleRate %u; format: %s; channels: %d", format.m_sampleRate, CAEUtil::DataFormatToStr(format.m_dataFormat), format.m_channelLayout.Count());
 
@@ -210,6 +214,11 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 
     m_encoding = CJNIAudioFormat::ENCODING_PCM_16BIT;
     m_sink_sampleRate       = CJNIAudioTrack::getNativeOutputSampleRate(CJNIAudioManager::STREAM_MUSIC);
+    if (StringUtils::StartsWithNoCase(CJNIBuild::HARDWARE, "rk3") || g_advancedSettings.m_libMediaPassThroughHack) // Rockchip with "passthrough hack"
+    {
+      CLog::Log(LOGNOTICE, "Using Rockchip hacked Passthrough");
+      stream = CJNIAudioManager::STREAM_VOICE_CALL;
+    }
 
     switch (m_format.m_dataFormat)
     {
@@ -317,7 +326,10 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 
 #if defined(HAS_LIBAMCODEC)
   if (aml_present())
+  {
+    m_old_digital_raw = aml_get_digital_raw();
     aml_set_audio_passthrough(m_passthrough);
+  }
   if (m_passthrough)
     atChannelMask = CJNIAudioFormat::CHANNEL_OUT_STEREO;
 #endif
@@ -391,9 +403,9 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 
 void CAESinkAUDIOTRACK::Deinitialize()
 {
-#ifdef DEBUG_VERBOSE
+//#ifdef DEBUG_VERBOSE
   CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::Deinitialize");
-#endif
+//#endif
   // Restore volume
   if (m_volume != -1)
   {
@@ -401,11 +413,20 @@ void CAESinkAUDIOTRACK::Deinitialize()
     CXBMCApp::ReleaseAudioFocus();
   }
 
+#if defined(HAS_LIBAMCODEC)
+  if (aml_present() && m_old_digital_raw != -1)
+  {
+    aml_set_digital_raw(m_old_digital_raw);
+    m_old_digital_raw = -1;
+  }
+#endif
+
   if (!m_at_jni)
     return;
 
   if (IsInitialized())
   {
+    CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::stopiing audiotrack");
     m_at_jni->stop();
     m_at_jni->flush();
   }

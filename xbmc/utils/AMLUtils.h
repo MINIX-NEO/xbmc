@@ -54,4 +54,6 @@ enum AML_DEVICE_TYPE aml_get_device_type();
 void aml_cpufreq_min(bool limit);
 void aml_cpufreq_max(bool limit);
 void aml_set_audio_passthrough(bool passthrough);
+int aml_get_digital_raw();
+void aml_set_digital_raw(int val);
 bool aml_mode_to_resolution(const char *mode, RESOLUTION_INFO *res);
