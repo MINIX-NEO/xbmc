@@ -192,10 +192,6 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 {
   m_format      = format;
   m_volume      = -1;
-#if defined(HAS_LIBAMCODEC)
-  if (aml_present())
-    m_old_digital_raw = -1;
-#endif
 
   CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::Initialize requested: sampleRate %u; format: %s; channels: %d", format.m_sampleRate, CAEUtil::DataFormatToStr(format.m_dataFormat), format.m_channelLayout.Count());
 
@@ -325,12 +321,7 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
   m_format.m_channelLayout  = AUDIOTRACKChannelMaskToAEChannelMap(atChannelMask);
 
 #if defined(HAS_LIBAMCODEC)
-  if (aml_present())
-  {
-    m_old_digital_raw = aml_get_digital_raw();
-    aml_set_audio_passthrough(m_passthrough);
-  }
-  if (m_passthrough)
+  if (aml_present() && m_passthrough)
     atChannelMask = CJNIAudioFormat::CHANNEL_OUT_STEREO;
 #endif
 
@@ -412,14 +403,6 @@ void CAESinkAUDIOTRACK::Deinitialize()
     CXBMCApp::SetSystemVolume(m_volume);
     CXBMCApp::ReleaseAudioFocus();
   }
-
-#if defined(HAS_LIBAMCODEC)
-  if (aml_present() && m_old_digital_raw != -1)
-  {
-    aml_set_digital_raw(m_old_digital_raw);
-    m_old_digital_raw = -1;
-  }
-#endif
 
   if (!m_at_jni)
     return;
