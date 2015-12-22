@@ -49,9 +49,6 @@ int CJNIAudioFormat::CHANNEL_OUT_BACK_RIGHT            = 0x00000080;
 
 int CJNIAudioFormat::CHANNEL_INVALID                   = 0x00000000;
 
-// OUYA-specific
-int CJNIAudioFormat::ENCODING_IEC61937_16BIT = -1;
-
 // AML
 int CJNIAudioFormat::ENCODING_DTSHD       = -1;
 int CJNIAudioFormat::ENCODING_DTSHD_MA    = -1;
@@ -96,12 +93,7 @@ void CJNIAudioFormat::PopulateStaticFields()
       }
     }
 
-    // OUYA-specific
-    jfieldID id = get_static_field_id<jclass>(c, "ENCODING_IEC61937_16BIT", "I");
-    if (id != NULL)
-      CJNIAudioFormat::ENCODING_IEC61937_16BIT = get_static_field<int>(c, "ENCODING_IEC61937_16BIT");
-    else
-      xbmc_jnienv()->ExceptionClear();
+    jfieldID id;
 
     // AML specific
     id = get_static_field_id<jclass>(c, "ENCODING_TRUEHD", "I");

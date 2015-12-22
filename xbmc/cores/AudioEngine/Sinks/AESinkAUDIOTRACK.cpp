@@ -210,11 +210,6 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 
     m_encoding = CJNIAudioFormat::ENCODING_PCM_16BIT;
     m_sink_sampleRate       = CJNIAudioTrack::getNativeOutputSampleRate(CJNIAudioManager::STREAM_MUSIC);
-    if (StringUtils::StartsWithNoCase(CJNIBuild::HARDWARE, "rk3") || g_advancedSettings.m_libMediaPassThroughHack) // Rockchip with "passthrough hack"
-    {
-      CLog::Log(LOGNOTICE, "Using Rockchip hacked Passthrough");
-      stream = CJNIAudioManager::STREAM_VOICE_CALL;
-    }
 
     switch (m_format.m_dataFormat)
     {
@@ -287,7 +282,7 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
       case AE_FMT_DTSHD:
         if (aml_present() && HasAmlHD())
         {
-          m_encoding              = CJNIAudioFormat::ENCODING_TRUEHD;
+          m_encoding              = CJNIAudioFormat::ENCODING_DTSHD_MA;
           m_sink_sampleRate       = 192000;
         }
         else
@@ -297,7 +292,7 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
       case AE_FMT_TRUEHD:
         if (aml_present() && HasAmlHD())
         {
-          m_encoding              = CJNIAudioFormat::ENCODING_DTSHD_MA;
+          m_encoding              = CJNIAudioFormat::ENCODING_TRUEHD;
           m_sink_sampleRate       = 192000;
         }
         else
