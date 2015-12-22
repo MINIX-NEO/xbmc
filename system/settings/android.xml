@@ -84,12 +84,15 @@
     <category id="audiooutput">
     <group id="1">
       <setting id="audiooutput.channels">
-      <visible>false</visible>
+        <visible>false</visible>
       </setting>
       <setting id="audiooutput.config">
         <visible>false</visible>
       </setting>
       <setting id="audiooutput.samplerate">
+        <visible>false</visible>
+      </setting>
+      <setting id="audiooutput.supportdtshdcpudecoding">
         <visible>false</visible>
       </setting>
     </group>
