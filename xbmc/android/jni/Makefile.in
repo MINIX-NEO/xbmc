@@ -60,6 +60,8 @@ SRCS      += PackageItemInfo.cpp
 SRCS      += DisplayMetrics.cpp
 SRCS      += Notification.cpp
 SRCS      += KeyEvent.cpp
+SRCS      += StorageManager.cpp
+SRCS      += StorageVolume.cpp
 
 LIB        = jni.a
 
