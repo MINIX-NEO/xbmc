@@ -96,6 +96,12 @@
         <visible>false</visible>
       </setting>
     </group>
+    <group id="3">
+      <setting id="audiooutput.ac3transcode">
+        <visible>false</visible>
+        <default>true</default>
+      </setting>
+    </group>
     </category>
   </section>
 </settings>
