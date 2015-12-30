@@ -41,6 +41,10 @@
 #include "utils/BitstreamConverter.h"
 #endif
 
+extern "C" {
+#include "libavutil/avutil.h"
+}  // extern "C"
+
 #include <unistd.h>
 #include <queue>
 #include <vector>
@@ -92,23 +96,11 @@ public:
   virtual int codec_set_cntl_mode(codec_para_t *pcodec, unsigned int mode)=0;
   virtual int codec_set_cntl_avthresh(codec_para_t *pcodec, unsigned int avthresh)=0;
   virtual int codec_set_cntl_syncthresh(codec_para_t *pcodec, unsigned int syncthresh)=0;
-
-  virtual int codec_set_av_threshold(codec_para_t *pcodec, int threshold)=0;
-  virtual int codec_set_video_delay_limited_ms(codec_para_t *pcodec,int delay_ms)=0;
-  virtual int codec_get_video_delay_limited_ms(codec_para_t *pcodec,int *delay_ms)=0;
-  virtual int codec_get_video_cur_delay_ms(codec_para_t *pcodec,int *delay_ms)=0;
-
-  // grab these from libamplayer
-  virtual int h263vld(unsigned char *inbuf, unsigned char *outbuf, int inbuf_len, int s263)=0;
-  virtual int decodeble_h263(unsigned char *buf)=0;
-
-  // grab this from amffmpeg so we do not have to load DllAvUtil
-  virtual AVRational av_d2q(double d, int max)=0;
 };
 
 class DllLibAmCodec : public DllDynamic, DllLibamCodecInterface
 {
-  // libamcodec is static linked into libamplayer.so
+  // libamcodec is static linked into libamplayer.so or libamcodec.so
   DECLARE_DLL_WRAPPER(DllLibAmCodec, "libamplayer.so")
 
   DEFINE_METHOD1(int, codec_init,               (codec_para_t *p1))
@@ -127,16 +119,6 @@ class DllLibAmCodec : public DllDynamic, DllLibamCodecInterface
   DEFINE_METHOD2(int, codec_set_cntl_avthresh,  (codec_para_t *p1, unsigned int p2))
   DEFINE_METHOD2(int, codec_set_cntl_syncthresh,(codec_para_t *p1, unsigned int p2))
 
-  DEFINE_METHOD2(int, codec_set_av_threshold,   (codec_para_t *p1, int p2))
-  DEFINE_METHOD2(int, codec_set_video_delay_limited_ms, (codec_para_t *p1, int p2))
-  DEFINE_METHOD2(int, codec_get_video_delay_limited_ms, (codec_para_t *p1, int *p2))
-  DEFINE_METHOD2(int, codec_get_video_cur_delay_ms, (codec_para_t *p1, int *p2))
-
-  DEFINE_METHOD4(int, h263vld,                  (unsigned char *p1, unsigned char *p2, int p3, int p4))
-  DEFINE_METHOD1(int, decodeble_h263,           (unsigned char *p1))
-
-  DEFINE_METHOD2(AVRational, av_d2q,            (double p1, int p2))
-
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD(codec_init)
     RESOLVE_METHOD(codec_close)
@@ -153,26 +135,9 @@ class DllLibAmCodec : public DllDynamic, DllLibamCodecInterface
     RESOLVE_METHOD(codec_set_cntl_mode)
     RESOLVE_METHOD(codec_set_cntl_avthresh)
     RESOLVE_METHOD(codec_set_cntl_syncthresh)
-
-    RESOLVE_METHOD(codec_set_av_threshold)
-
-    RESOLVE_METHOD(h263vld)
-    RESOLVE_METHOD(decodeble_h263)
-
-    RESOLVE_METHOD(av_d2q)
   END_METHOD_RESOLVE()
 
 public:
-  bool LoadVideoDelayFunctions()
-  {
-    // added in amcodec/jellybean, manually load them so we do not fault.
-    int rtn;
-    rtn  = m_dll->ResolveExport("codec_set_video_delay_limited_ms", (void**)&m_codec_set_video_delay_limited_ms_ptr, false);
-    rtn &= m_dll->ResolveExport("codec_get_video_delay_limited_ms", (void**)&m_codec_get_video_delay_limited_ms_ptr, false);
-    rtn &= m_dll->ResolveExport("codec_get_video_cur_delay_ms",(void**)&m_codec_get_video_cur_delay_ms_ptr, false);
-    return(rtn == 1);
-  }
-
   void codec_init_para(aml_generic_param *p_in, codec_para_t *p_out)
   {
     memset(p_out, 0x00, sizeof(codec_para_t));
@@ -357,8 +322,6 @@ typedef struct am_private_t
   unsigned int      video_ratio64;
   unsigned int      video_rate;
   unsigned int      video_rotation_degree;
-  int               flv_flag;
-  int               h263_decodable;
   int               extrasize;
   uint8_t           *extradata;
   DllLibAmCodec     *m_dll;
@@ -1261,47 +1224,6 @@ int set_header_info(am_private_t *para)
       else if (para->video_codec_type == VIDEO_DEC_FORMAT_H263)
       {
         return PLAYER_UNSUPPORT;
-        unsigned char *vld_buf;
-        int vld_len, vld_buf_size = para->video_width * para->video_height * 2;
-
-        if (!pkt->data_size) {
-            return PLAYER_SUCCESS;
-        }
-
-        if ((pkt->data[0] == 0) && (pkt->data[1] == 0) && (pkt->data[2] == 1) && (pkt->data[3] == 0xb6)) {
-            return PLAYER_SUCCESS;
-        }
-
-        vld_buf = (unsigned char*)malloc(vld_buf_size);
-        if (!vld_buf) {
-            return PLAYER_NOMEM;
-        }
-
-        if (para->flv_flag) {
-            vld_len = para->m_dll->h263vld(pkt->data, vld_buf, pkt->data_size, 1);
-        } else {
-            if (0 == para->h263_decodable) {
-                para->h263_decodable = para->m_dll->decodeble_h263(pkt->data);
-                if (0 == para->h263_decodable) {
-                    CLog::Log(LOGDEBUG, "[%s]h263 unsupport video and audio, exit", __FUNCTION__);
-                    return PLAYER_UNSUPPORT;
-                }
-            }
-            vld_len = para->m_dll->h263vld(pkt->data, vld_buf, pkt->data_size, 0);
-        }
-
-        if (vld_len > 0) {
-            if (pkt->buf) {
-                free(pkt->buf);
-            }
-            pkt->buf = vld_buf;
-            pkt->buf_size = vld_buf_size;
-            pkt->data = pkt->buf;
-            pkt->data_size = vld_len;
-        } else {
-            free(vld_buf);
-            pkt->data_size = 0;
-        }
       }
     } else if (para->video_format == VFORMAT_VC1) {
         if (para->video_codec_type == VIDEO_DEC_FORMAT_WMV3) {
@@ -1449,8 +1371,12 @@ CAMLCodec::CAMLCodec() : CThread("CAMLCodec")
   am_private = new am_private_t;
   memset(am_private, 0, sizeof(am_private_t));
   m_dll = new DllLibAmCodec;
-  m_dll->Load();
-  m_dll_has_video_delay = m_dll->LoadVideoDelayFunctions();
+  if(!m_dll->Load())
+  {
+    CLog::Log(LOGWARNING, "CAMLCodec::CAMLCodec libamplayer.so not found, trying libamcodec.so instead");
+    m_dll->SetFile("libamcodec.so");
+    m_dll->Load();
+  }
   am_private->m_dll = m_dll;
 }
 
@@ -1496,9 +1422,9 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
   am_private->video_pid        = hints.pid;
 
   // handle video ratio
-  AVRational video_ratio       = m_dll->av_d2q(1, SHRT_MAX);
+  AVRational video_ratio       = av_d2q(1, SHRT_MAX);
   //if (!hints.forced_aspect)
-  //  video_ratio = m_dll->av_d2q(hints.aspect, SHRT_MAX);
+  //  video_ratio = av_d2q(hints.aspect, SHRT_MAX);
   am_private->video_ratio      = ((int32_t)video_ratio.num << 16) | video_ratio.den;
   am_private->video_ratio64    = ((int64_t)video_ratio.num << 32) | video_ratio.den;
 
@@ -1557,8 +1483,8 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
       CLog::Log(LOGDEBUG, "CAMLCodec::OpenDecoder: MVC detected");
       am_private->video_format = VFORMAT_H264MVC;
       m_hints.stereo_mode = "top_bottom";
-    } 
-    else if ((hints.width * hints.height) > (1920 * 1088))
+    }
+    else if (hints.width > 1920 || hints.height > 1088)
       am_private->video_format = VFORMAT_H264_4K2K;
   }
   switch (am_private->video_format)
@@ -1577,13 +1503,6 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
     am_private->video_codec_type = codec_tag_to_vdec_type(am_private->video_codec_tag);
   if (am_private->video_codec_type == VIDEO_DEC_FORMAT_UNKNOW)
     am_private->video_codec_type = codec_tag_to_vdec_type(am_private->video_codec_id);
-
-  am_private->flv_flag = 0;
-  if (am_private->video_codec_id == AV_CODEC_ID_FLV1)
-  {
-    am_private->video_codec_tag = CODEC_TAG_F263;
-    am_private->flv_flag = 1;
-  }
 
   CLog::Log(LOGDEBUG, "CAMLCodec::OpenDecoder "
     "hints.width(%d), hints.height(%d), hints.codec(%d), hints.codec_tag(%d), hints.profile(%d), hints.pid(%d)",
@@ -1683,8 +1602,6 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
   // make sure we are not stuck in pause (amcodec bug)
   m_dll->codec_resume(&am_private->vcodec);
   m_dll->codec_set_cntl_mode(&am_private->vcodec, TRICKMODE_NONE);
-  if (m_dll_has_video_delay)
-    m_dll->codec_set_video_delay_limited_ms(&am_private->vcodec, 1000);
 
   m_dll->codec_set_cntl_avthresh(&am_private->vcodec, AV_SYNC_THRESH);
   m_dll->codec_set_cntl_syncthresh(&am_private->vcodec, 0);
@@ -1781,8 +1698,6 @@ void CAMLCodec::Reset()
   }
   // reset the decoder
   m_dll->codec_reset(&am_private->vcodec);
-  if (m_dll_has_video_delay)
-    m_dll->codec_set_video_delay_limited_ms(&am_private->vcodec, 1000);
   dumpfile_close(am_private);
   dumpfile_open(am_private);
 
@@ -1807,6 +1722,11 @@ int CAMLCodec::Decode(uint8_t *pData, size_t iSize, double dts, double pts)
 {
   if (!m_opened)
     return VC_BUFFER;
+
+  // grr, m_RenderUpdateCallBackFn in g_renderManager is NULL'ed during
+  // g_renderManager.Configure call by player, which happens after the codec
+  // OpenDecoder call. So we need to restore it but it does not seem to stick :)
+  g_renderManager.RegisterRenderUpdateCallBack((const void*)this, RenderUpdateCallBack);
 
   if (pData)
   {
@@ -1871,70 +1791,43 @@ int CAMLCodec::Decode(uint8_t *pData, size_t iSize, double dts, double pts)
       // Decoder got stuck; Reset
       Reset();
     }
-    if (!m_dll_has_video_delay)
-    {
-      // if we seek, then GetTimeSize is wrong as
-      // reports lastpts - cur_pts and hw decoder has
-      // not started outputing new pts values yet.
-      // so we grab the 1st pts sent into driver and
-      // use that to calc GetTimeSize.
-      if (m_1st_pts == 0)
-        m_1st_pts = am_private->am_pkt.lastpts;
-    }
+
+    // if we seek, then GetTimeSize is wrong as
+    // reports lastpts - cur_pts and hw decoder has
+    // not started outputing new pts values yet.
+    // so we grab the 1st pts sent into driver and
+    // use that to calc GetTimeSize.
+    if (m_1st_pts == 0)
+      m_1st_pts = am_private->am_pkt.lastpts;
   }
+
+  // if we have still frames, demux size will be small
+  // and we need to pre-buffer more.
+  double target_timesize = 1.0;
+  if (iSize < 20)
+    target_timesize = 2.0;
+
+  // keep hw buffered demux above 1 second
+  if (GetTimeSize() < target_timesize && m_speed == DVD_PLAYSPEED_NORMAL)
+    return VC_BUFFER;
+
+  // wait until we get a new frame or 25ms,
+  if (m_old_pictcnt == m_cur_pictcnt)
+    m_ready_event.WaitMSec(25);
 
   // we must return VC_BUFFER or VC_PICTURE,
   // default to VC_BUFFER.
   int rtn = VC_BUFFER;
-  if (m_dll_has_video_delay)
+  if (m_old_pictcnt != m_cur_pictcnt)
   {
-    // we must wait here or we can consume
-    // all buffered dvd player video demux packets.
-    // wait long if hw buffers greater than our limit.
-    // wait short if not.
-    int wait_time = 25;
-    if (GetTimeSize() > 1.0)
-      wait_time = 100;
-    m_ready_event.Reset();
-    m_ready_event.WaitMSec(wait_time);
-
-    if (m_old_pictcnt != m_cur_pictcnt)
-    {
-      m_old_pictcnt++;
-      rtn = VC_PICTURE;
-      // we got a new pict, try to keep hw buffered demux around 1 second.
-      if (GetTimeSize() < 1.0)
-        rtn |= VC_BUFFER;
-    }
+    m_old_pictcnt++;
+    rtn = VC_PICTURE;
+    // we got a new pict, try and keep hw buffered demux above 2 seconds.
+    // this, combined with the above 1 second check, keeps hw buffered demux between 1 and 2 seconds.
+    // we also check to make sure we keep from filling hw buffer.
+    if (GetTimeSize() < 2.0 && GetDataSize() < m_vbufsize/3)
+      rtn |= VC_BUFFER;
   }
-  else
-  {
-    // if we have still frames, demux size will be small
-    // and we need to pre-buffer more.
-    double target_timesize = 1.0;
-    if (iSize < 20)
-      target_timesize = 2.0;
-
-    // keep hw buffered demux above 1 second
-    if (GetTimeSize() < target_timesize && m_speed == DVD_PLAYSPEED_NORMAL)
-      return VC_BUFFER;
-
-    // wait until we get a new frame or 25ms,
-    if (m_old_pictcnt == m_cur_pictcnt)
-      m_ready_event.WaitMSec(25);
-
-    if (m_old_pictcnt != m_cur_pictcnt)
-    {
-      m_old_pictcnt++;
-      rtn = VC_PICTURE;
-      // we got a new pict, try and keep hw buffered demux above 2 seconds.
-      // this, combined with the above 1 second check, keeps hw buffered demux between 1 and 2 seconds.
-      // we also check to make sure we keep from filling hw buffer.
-      if (GetTimeSize() < 2.0 && GetDataSize() < m_vbufsize/3)
-        rtn |= VC_BUFFER;
-    }
-  }
-
 /*
   CLog::Log(LOGDEBUG, "CAMLCodec::Decode: "
     "rtn(%d), m_cur_pictcnt(%lld), m_cur_pts(%f), lastpts(%f), GetTimeSize(%f), GetDataSize(%d)",
@@ -1965,7 +1858,7 @@ bool CAMLCodec::GetPicture(DVDVideoPicture *pDvdVideoPicture)
   {
     // We are FF/RW; Do not use the Player clock or it just doesn't work
     if (m_cur_pts == 0)
-      pDvdVideoPicture->pts = (double)am_private->am_pkt.lastpts / PTS_FREQ * DVD_TIME_BASE;
+      pDvdVideoPicture->pts = (double)m_1st_pts / PTS_FREQ * DVD_TIME_BASE;
     else
       pDvdVideoPicture->pts = (double)m_cur_pts / PTS_FREQ * DVD_TIME_BASE;
   }
@@ -2021,26 +1914,16 @@ double CAMLCodec::GetTimeSize()
   if (!m_opened)
     return 0;
 
-  if (m_dll_has_video_delay)
-  {
-    int video_delay_ms;
-    if (m_dll->codec_get_video_cur_delay_ms(&am_private->vcodec, &video_delay_ms) >= 0)
-      m_timesize = (float)video_delay_ms / 1000.0;
-  }
+  // if m_cur_pts is zero, hw decoder was not started yet
+  // so we use the pts of the 1st demux packet that was send
+  // to hw decoder to calc timesize.
+  if (m_cur_pts == 0)
+    m_timesize = (double)(am_private->am_pkt.lastpts - m_1st_pts) / PTS_FREQ;
   else
-  {
-    // if m_cur_pts is zero, hw decoder was not started yet
-    // so we use the pts of the 1st demux packet that was send
-    // to hw decoder to calc timesize.
-    if (m_cur_pts == 0)
-      m_timesize = (double)(am_private->am_pkt.lastpts - m_1st_pts) / PTS_FREQ;
-    else
-      m_timesize = (double)(am_private->am_pkt.lastpts - m_cur_pts) / PTS_FREQ;
-  }
+    m_timesize = (double)(am_private->am_pkt.lastpts - m_cur_pts) / PTS_FREQ;
 
   // lie to DVDPlayer, it is hardcoded to a max of 8 seconds,
-  // if you buffer more than 8 seconds, it goes nuts. We need
-  // real value in CAMLCodec::Decode so return a local value.
+  // if you buffer more than 8 seconds, it goes nuts.
   double timesize = m_timesize;
   if (timesize < 0.0)
     timesize = 0.0;
@@ -2071,7 +1954,7 @@ void CAMLCodec::Process()
       }
 
       pts_video = get_pts_video();
-      if (m_cur_pts != pts_video && pts_video != 0)
+      if (m_cur_pts != pts_video)
       {
         //CLog::Log(LOGDEBUG, "CAMLCodec::Process: pts_video(%lld), pts_video/PTS_FREQ(%f), duration(%f)",
         //  pts_video, (double)pts_video/PTS_FREQ, 1.0/((double)(pts_video - m_cur_pts)/PTS_FREQ));
@@ -2323,6 +2206,10 @@ void CAMLCodec::SetVideoRect(const CRect &SrcRect, const CRect &DestRect)
   {
     float xscale = display.Width() / gui.Width();
     float yscale = display.Height() / gui.Height();
+    if (m_stereo_mode == RENDER_STEREO_MODE_SPLIT_VERTICAL)
+      xscale /= 2.0;
+    else if (m_stereo_mode == RENDER_STEREO_MODE_SPLIT_HORIZONTAL)
+      yscale /= 2.0;
     dst_rect.x1 *= xscale;
     dst_rect.x2 *= xscale;
     dst_rect.y1 *= yscale;
@@ -2345,10 +2232,12 @@ void CAMLCodec::SetVideoRect(const CRect &SrcRect, const CRect &DestRect)
   }
   else if (m_stereo_mode == RENDER_STEREO_MODE_SPLIT_VERTICAL)
   {
+    dst_rect.x2 *= 2.0;
     SetVideo3dMode(MODE_3D_DISABLE);
   }
   else if (m_stereo_mode == RENDER_STEREO_MODE_SPLIT_HORIZONTAL)
   {
+    dst_rect.y2 *= 2.0;
     SetVideo3dMode(MODE_3D_DISABLE);
   }
   else if (m_stereo_mode == RENDER_STEREO_MODE_INTERLACED)
