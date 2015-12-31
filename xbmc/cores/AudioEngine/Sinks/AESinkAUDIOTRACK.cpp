@@ -436,6 +436,9 @@ void CAESinkAUDIOTRACK::GetDelay(AEDelayStatus& status)
   // for wrap saftey, we need to do all ops on it in 32bit integer math.
   uint32_t head_pos = (uint32_t)m_at_jni->getPlaybackHeadPosition();
 
+  if (aml_present() && HasAmlHD() && m_encoding == CJNIAudioFormat::ENCODING_E_AC3)
+    head_pos /= 4;  // AML wants sink in 48k but returns pos in 192k
+
   double delay;
   if (m_passthrough && !WantsIEC61937())
   {
