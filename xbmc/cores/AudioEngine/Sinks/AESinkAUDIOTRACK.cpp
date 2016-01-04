@@ -27,6 +27,7 @@
 #include "settings/AdvancedSettings.h"
 #if defined(HAS_LIBAMCODEC)
 #include "utils/AMLUtils.h"
+#include "utils/CPUInfo.h"
 #endif
 #include "utils/log.h"
 #include "utils/StringUtils.h"
@@ -559,6 +560,17 @@ void CAESinkAUDIOTRACK::GetDelay(AEDelayStatus& status)
 
 double CAESinkAUDIOTRACK::GetLatency()
 {
+#if defined(HAS_LIBAMCODEC)
+  if (aml_present())
+  {
+    std::string cpu_hardware = g_cpuInfo.getCPUHardware();
+    if (StringUtils::StartsWithNoCase(cpu_hardware, "amlogic"))   // S905
+    {
+      CLog::Log(LOGDEBUG, "CAESinkAUDIOTRACK::GetLatency -- Enabling aml 250ms latency");
+      return 0.250;
+    }
+  }
+#endif
   return 0.0;
 }
 
