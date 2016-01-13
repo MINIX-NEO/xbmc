@@ -56,19 +56,21 @@ protected:
 
 private:
   jni::CJNIAudioTrack  *m_at_jni;
-  // m_frames_written must wrap at UINT32_MAX
-  uint32_t              m_frames_written;
-  uint32_t              m_lastHeadPosition;
-  uint32_t              m_ptOffset;
+  double                m_duration_written;
+  double                m_last_duration_written;
+  uint32_t              m_last_head_pos;
 
   static CAEDeviceInfo m_info;
   static std::set<unsigned int>       m_sink_sampleRates;
+  std::vector<double>                 m_smoothedDelayVec;
+  int                                 m_smoothedDelayCount;
   AEAudioFormat      m_format;
   double             m_volume;
-  int16_t           *m_alignedS16;
   unsigned int       m_sink_frameSize;
   unsigned int       m_sink_sampleRate;
   bool               m_passthrough;
   double             m_audiotrackbuffer_sec;
   int                m_encoding;
+  unsigned int       m_buffer_size;
+  double             m_sink_delay;
 };

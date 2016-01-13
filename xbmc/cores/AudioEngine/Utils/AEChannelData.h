@@ -19,6 +19,8 @@
  *
  */
 
+#define PT_FORMAT_RAW_CLASS 0xFF00
+
 /**
  * The possible channels
  */
