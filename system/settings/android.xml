@@ -92,6 +92,9 @@
       <setting id="audiooutput.samplerate">
         <visible>false</visible>
       </setting>
+      <setting id="audiooutput.stereoupmix">
+      <visible>false</visible>
+    </setting>
       <setting id="audiooutput.supportdtshdcpudecoding">
         <visible>false</visible>
       </setting>
