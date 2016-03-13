@@ -484,7 +484,7 @@ void CAESinkAUDIOTRACK::GetDelay(AEDelayStatus& status)
   }
 
 #if defined(HAS_LIBAMCODEC)
-  if (aml_present() && (m_encoding == CJNIAudioFormat::ENCODING_E_AC3 || m_encoding == CJNIAudioFormat::ENCODING_DTSHD_MA || m_encoding == CJNIAudioFormat::ENCODING_TRUEHD))
+  if (aml_present() && (m_encoding == CJNIAudioFormat::ENCODING_E_AC3))
     head_pos /= m_sink_frameSize;  // AML returns pos in bytes for those
 #endif
 
