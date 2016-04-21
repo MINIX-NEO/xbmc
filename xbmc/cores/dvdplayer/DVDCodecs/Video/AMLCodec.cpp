@@ -243,6 +243,7 @@ public:
 
 #define EXTERNAL_PTS    (1)
 #define SYNC_OUTSIDE    (2)
+#define UNSTABLE_PTS    (0x40)
 
 // missing tags
 #define CODEC_TAG_VC_1  (0x312D4356)
@@ -1537,7 +1538,8 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
     case VFORMAT_H264:
     case VFORMAT_H264MVC:
       am_private->gcodec.format = VIDEO_DEC_FORMAT_H264;
-      am_private->gcodec.param  = (void*)EXTERNAL_PTS;
+      if (am_private->gcodec.rate == 4004 || (am_private->gcodec.rate == 3203 /*29.97fps*/))
+        am_private->gcodec.param = (void*)UNSTABLE_PTS;
       // h264 in an avi file
       if (m_hints.ptsinvalid)
         am_private->gcodec.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE);
