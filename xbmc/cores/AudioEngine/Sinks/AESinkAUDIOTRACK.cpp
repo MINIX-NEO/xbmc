@@ -739,7 +739,12 @@ void CAESinkAUDIOTRACK::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
     }
     std::copy(m_sink_sampleRates.begin(), m_sink_sampleRates.end(), std::back_inserter(ptinfo.m_sampleRates));
 
-    if (CJNIBase::GetSDKVersion() >= 21)
+    if (
+      CJNIBase::GetSDKVersion() >= 21
+#if defined(HAS_LIBAMCODEC)
+      && !aml_present()
+#endif
+      )
     {
       CAEDeviceInfo rawptinfo = ptinfo;
       rawptinfo.m_dataFormats.clear();
