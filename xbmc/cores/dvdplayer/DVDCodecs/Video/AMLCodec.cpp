@@ -1589,7 +1589,8 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
       break;
     case VFORMAT_HEVC:
       am_private->gcodec.format = VIDEO_DEC_FORMAT_HEVC;
-      am_private->gcodec.param  = (void*)EXTERNAL_PTS;
+      if (am_private->gcodec.rate == 4004 || (am_private->gcodec.rate == 3203 /*29.97fps*/))
+        am_private->gcodec.param = (void*)UNSTABLE_PTS;
       if (m_hints.ptsinvalid)
         am_private->gcodec.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE);
       break;
