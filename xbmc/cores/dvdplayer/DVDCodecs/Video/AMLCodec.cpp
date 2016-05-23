@@ -1542,6 +1542,8 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
       break;
     case VFORMAT_MPEG4:
       am_private->gcodec.param = (void*)EXTERNAL_PTS;
+      if (am_private->gcodec.rate == 4004 || (am_private->gcodec.rate == 3203 /*29.97fps*/))
+        am_private->gcodec.param = (void*)UNSTABLE_PTS;
       break;
     case VFORMAT_H264:
     case VFORMAT_H264MVC:
@@ -1583,6 +1585,8 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
       }
       break;
     case VFORMAT_VC1:
+      if (am_private->gcodec.rate == 4004 || (am_private->gcodec.rate == 3203 /*29.97fps*/))
+        am_private->gcodec.param = (void*)UNSTABLE_PTS;
       // vc1 in an avi file
       if (m_hints.ptsinvalid)
         am_private->gcodec.param = (void*)EXTERNAL_PTS;
@@ -1593,6 +1597,10 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
         am_private->gcodec.param = (void*)UNSTABLE_PTS;
       if (m_hints.ptsinvalid)
         am_private->gcodec.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE);
+      break;
+    case VFORMAT_MPEG12:
+      if (am_private->gcodec.rate == 4004 || (am_private->gcodec.rate == 3203 /*29.97fps*/))
+        am_private->gcodec.param = (void*)UNSTABLE_PTS;
       break;
   }
   am_private->gcodec.param = (void *)((unsigned int)am_private->gcodec.param | (am_private->video_rotation_degree << 16));
