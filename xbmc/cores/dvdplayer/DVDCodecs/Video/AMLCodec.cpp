@@ -1459,7 +1459,7 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
 
   // check for SD h264 content incorrectly reported as 60 fsp
   // mp4/avi containers :(
-  if (hints.codec == AV_CODEC_ID_H264 && hints.width <= 720 && am_private->video_rate == 1602)
+  if (hints.codec == AV_CODEC_ID_H264 && hints.width <= 720 && am_private->video_rate == 1602  && hints.ptsinvalid)
   {
     am_private->video_rate = 0.5 + (float)UNIT_FREQ * 1001 / 24000;
     CLog::Log(LOGDEBUG, "CAMLCodec::OpenDecoder video_rate exception 2: %d", am_private->video_rate);
@@ -1467,12 +1467,12 @@ bool CAMLCodec::OpenDecoder(CDVDStreamInfo &hints)
 
   // check for SD h264 content incorrectly reported as some form of 30 fsp
   // mp4/avi containers :(
-  if (hints.codec == AV_CODEC_ID_H264 && hints.width <= 720)
+  if (hints.codec == AV_CODEC_ID_H264 && hints.width <= 720 && hints.ptsinvalid)
   {
     if (am_private->video_rate >= 3200 && am_private->video_rate <= 3210)
     {
-      CLog::Log(LOGDEBUG, "CAMLCodec::OpenDecoder video_rate exception");
       am_private->video_rate = 0.5 + (float)UNIT_FREQ * 1001 / 24000;
+      CLog::Log(LOGDEBUG, "CAMLCodec::OpenDecoder video_rate exception 3: %d", am_private->video_rate);
     }
   }
 
