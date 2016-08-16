@@ -75,6 +75,22 @@
       </group>
     </category>
     <category id="audiooutput">
+      <setting id="audiooutput.channels">
+        <visible>false</visible>
+      </setting>
+      <setting id="audiooutput.config">
+        <visible>false</visible>
+      </setting>
+      <setting id="audiooutput.samplerate">
+        <visible>false</visible>
+      </setting>
+      <setting id="audiooutput.stereoupmix">
+      <visible>false</visible>
+    </setting>
+      <setting id="audiooutput.supportdtshdcpudecoding">
+        <visible>false</visible>
+      </setting>
+    </group>
     <group id="3">
       <setting id="audiooutput.ac3transcode">
         <visible>false</visible>
